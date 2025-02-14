@@ -1,4 +1,4 @@
-name: Docker Build & Push to GHCR
+name: Docker Build & Push to AWS ECR
 
 on:
   push:
@@ -14,25 +14,38 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Log in to GitHub Container Registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      # Configure AWS Credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2  # Updated to us-east-2
 
+      # Log in to AWS ECR
+      - name: Log in to Amazon ECR
+        run: |
+          aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin ${{ secrets.AWS_ECR_REGISTRY }}
+
+      # Extract Branch Name for Tagging
       - name: Extract Branch Name
         id: extract_branch
         run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr '/' '-')" >> $GITHUB_ENV
-        
+
+      # Build and Tag Docker Image
       - name: Build and Tag Docker Image
         run: |
-          IMAGE_NAME=$(echo ghcr.io/${{ github.repository }}/app | tr '[:upper:]' '[:lower:]')
+          IMAGE_NAME=${{ secrets.AWS_ECR_REGISTRY }}/app
           BRANCH_TAG=${{ env.BRANCH_NAME }}
 
           docker build -t $IMAGE_NAME:$BRANCH_TAG .
           docker tag $IMAGE_NAME:$BRANCH_TAG $IMAGE_NAME:latest
 
-
-      - name: Push Docker Image to GHCR
+      # Push Docker Image to AWS ECR
+      - name: Push Docker Image to AWS ECR
         run: |
-          IMAGE_NAME=$(echo ghcr.io/${{ github.repository }}/app | tr '[:upper:]' '[:lower:]')
+          IMAGE_NAME=${{ secrets.AWS_ECR_REGISTRY }}/app
           BRANCH_TAG=${{ env.BRANCH_NAME }}
 
           docker push $IMAGE_NAME:$BRANCH_TAG
+          docker push $IMAGE_NAME:latest
