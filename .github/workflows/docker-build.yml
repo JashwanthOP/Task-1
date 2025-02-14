@@ -1,0 +1,8 @@
+- name: Configure AWS Credentials
+  uses: aws-actions/configure-aws-credentials@v2
+  with:
+    aws-access-key-id: ${{ secrets.
+AKIARZ5BMSU7PIRTCY5Y }}
+    aws-secret-access-key: ${{ secrets.bg5ATdbQvu2yX3P1/Hbe5WRfNW+OSoorzQ0KJoZH }}
+    aws-region: ${{ secrets.us-east-2
+ }}
