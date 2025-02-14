@@ -3,18 +3,21 @@ name: Build and Push Docker Image to ECR
 on:
   push:
     branches:
-      - "*"  
+      - "*"
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
+      # Step 1: Checkout the code
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # Step 2: Extract the branch name
       - name: Get Branch Name
         run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
 
+      # Step 3: Configure AWS credentials
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -22,19 +25,23 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      # Step 4: Login to Amazon ECR
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      # Step 5: Build the Docker image
       - name: Build Docker Image
         run: |
           docker build -t app:latest .
 
+      # Step 6: Tag the Docker image
       - name: Tag Docker Image
         run: |
           docker tag app:latest ${{ secrets.ECR_REGISTRY }}/task1:${{ env.BRANCH_NAME }}
           docker tag app:latest ${{ secrets.ECR_REGISTRY }}/task1:latest
 
+      # Step 7: Push the Docker image to ECR
       - name: Push Docker Image to ECR
         run: |
           docker push ${{ secrets.ECR_REGISTRY }}/task1:${{ env.BRANCH_NAME }}
