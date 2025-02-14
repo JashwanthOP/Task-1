@@ -37,12 +37,18 @@ jobs:
           AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           AWS_ECR_REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com"
 
-          IMAGE_NAME="$AWS_ECR_REGISTRY/app"  # Ensure correct repo name
-
+          IMAGE_NAME="$AWS_ECR_REGISTRY/app"  # Ensure correct image name
           BRANCH_TAG=${{ env.BRANCH_NAME }}
 
-          docker build -t $IMAGE_NAME:$BRANCH_TAG .
-          docker tag $IMAGE_NAME:$BRANCH_TAG $IMAGE_NAME:latest
+          echo "Building Docker Image..."
+          docker build -t $IMAGE_NAME:$BRANCH_TAG .  # Build Image
+
+          echo "Tagging Docker Image..."
+          docker tag $IMAGE_NAME:$BRANCH_TAG $IMAGE_NAME:latest  # Tag Image
+          
+          echo "Verifying Image Exists..."
+          docker images | grep "$AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/app"  # Debugging Step
+
 
 
       # Push Docker Image to AWS ECR
