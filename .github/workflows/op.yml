@@ -37,25 +37,25 @@ jobs:
           AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           AWS_ECR_REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com"
 
-          IMAGE_NAME="$AWS_ECR_REGISTRY/app"  # Ensure correct image name
+          IMAGE_NAME="$AWS_ECR_REGISTRY/app"  # Ensure correct repository name
           BRANCH_TAG=${{ env.BRANCH_NAME }}
 
-          echo "Building Docker Image..."
-          docker build -t $IMAGE_NAME:$BRANCH_TAG .  # Build Image
+          echo "🔨 Building Docker Image..."
+          docker build -t $IMAGE_NAME:$BRANCH_TAG . || { echo "🚨 Build failed!"; exit 1; }
 
-          echo "Tagging Docker Image..."
-          docker tag $IMAGE_NAME:$BRANCH_TAG $IMAGE_NAME:latest  # Tag Image
-          
-          echo "Verifying Image Exists..."
-          docker images | grep "$AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/app"  # Debugging Step
+          echo "🏷️ Tagging Docker Image..."
+          docker tag $IMAGE_NAME:$BRANCH_TAG $IMAGE_NAME:latest || { echo "🚨 Tagging failed!"; exit 1; }
+
+          echo "🛠️ Verifying Docker Images..."
+          docker images  # Debugging step
 
 
 
-      # Push Docker Image to AWS ECR
       - name: Push Docker Image to AWS ECR
         run: |
-          IMAGE_NAME=${{ secrets.AWS_ECR_REGISTRY }}/app
-          BRANCH_TAG=${{ env.BRANCH_NAME }}
+          echo "🔍 Checking if image exists before pushing..."
+          docker images | grep "$AWS_ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/app" || { echo "🚨 Image does not exist!"; exit 1; }
 
+          echo "🚀 Pushing Docker Image to AWS ECR..."
           docker push $IMAGE_NAME:$BRANCH_TAG
           docker push $IMAGE_NAME:latest
